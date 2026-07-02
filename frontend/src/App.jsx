@@ -36,9 +36,7 @@ function App() {
 
     checkResetVersion();
 
-    const interval = setInterval(() => {
-      checkResetVersion();
-    }, 3000);
+    const interval = setInterval(checkResetVersion, 3000);
 
     return () => clearInterval(interval);
   }, []);
@@ -61,10 +59,7 @@ function App() {
         return;
       }
 
-      if (
-        Number(localResetVersion) !==
-        Number(data.resetVersion)
-      ) {
+      if (Number(localResetVersion) !== Number(data.resetVersion)) {
         localStorage.removeItem("aquaquizz_player");
         localStorage.removeItem("aquaquizz_intro_seen");
 
@@ -84,117 +79,60 @@ function App() {
   function handleRegister(newPlayer) {
     setPlayer(newPlayer);
     setIntroSeen(false);
-
-    localStorage.removeItem(
-      "aquaquizz_intro_seen"
-    );
+    localStorage.removeItem("aquaquizz_intro_seen");
   }
 
   function handleStartQuiz() {
-    localStorage.setItem(
-      "aquaquizz_intro_seen",
-      "true"
-    );
-
+    localStorage.setItem("aquaquizz_intro_seen", "true");
     setIntroSeen(true);
+  }
+
+  function protectedPage(page) {
+    if (!player) {
+      return <RegisterPage onRegister={handleRegister} />;
+    }
+
+    if (!introSeen) {
+      return (
+        <IntroPage
+          player={player}
+          onStart={handleStartQuiz}
+        />
+      );
+    }
+
+    return page;
   }
 
   return (
     <BrowserRouter>
       <div className="app">
         <Routes>
-
-          {/* Accueil */}
           <Route
             path="/"
-            element={
-              !player ? (
-                <RegisterPage
-                  onRegister={handleRegister}
-                />
-              ) : !introSeen ? (
-                <IntroPage
-                  player={player}
-                  onStart={handleStartQuiz}
-                />
-              ) : (
-                <Navigate to="/question/next" />
-              )
-            }
+            element={<Navigate to="/question/next" />}
           />
 
-          {/* Tous les QR mènent ici */}
-          <Route
-            path="/question/:number"
-            element={
-              !player ? (
-                <RegisterPage
-                  onRegister={handleRegister}
-                />
-              ) : !introSeen ? (
-                <IntroPage
-                  player={player}
-                  onStart={handleStartQuiz}
-                />
-              ) : (
-                <ReadyPage player={player} />
-              )
-            }
-          />
-
-          {/* Question suivante automatique */}
           <Route
             path="/question/next"
-            element={
-              !player ? (
-                <RegisterPage
-                  onRegister={handleRegister}
-                />
-              ) : !introSeen ? (
-                <IntroPage
-                  player={player}
-                  onStart={handleStartQuiz}
-                />
-              ) : (
-                <ReadyPage player={player} />
-              )
-            }
+            element={protectedPage(<ReadyPage player={player} />)}
           />
 
-          {/* Question réelle */}
           <Route
-            path="/question/:number/play"
-            element={
-              !player ? (
-                <RegisterPage
-                  onRegister={handleRegister}
-                />
-              ) : !introSeen ? (
-                <IntroPage
-                  player={player}
-                  onStart={handleStartQuiz}
-                />
-              ) : (
-                <QuestionPage player={player} />
-              )
-            }
+            path="/question/:number"
+            element={protectedPage(<ReadyPage player={player} />)}
           />
 
           <Route
-            path="/ranking"
-            element={<RankingPage />}
+            path="/question/:number/play"
+            element={protectedPage(<QuestionPage player={player} />)}
           />
 
-          <Route
-            path="/admin"
-            element={<AdminPage />}
-          />
+          <Route path="/ranking" element={<RankingPage />} />
 
-          <Route
-            path="/live"
-            element={<LivePage />}
-          />
+          <Route path="/admin" element={<AdminPage />} />
 
+          <Route path="/live" element={<LivePage />} />
         </Routes>
       </div>
     </BrowserRouter>
