@@ -53,6 +53,21 @@ function escapeCsv(value) {
   return `"${stringValue}"`;
 }
 
+function getResetVersion(callback) {
+  db.get(
+    "SELECT value FROM app_state WHERE key = 'reset_version'",
+    [],
+    (err, row) => {
+      if (err) {
+        callback(err, null);
+        return;
+      }
+
+      callback(null, row ? Number(row.value) : 0);
+    }
+  );
+}
+
 const db = new sqlite3.Database("./aquaquizz.sqlite", (err) => {
   if (err) {
     console.error("❌ Erreur SQLite :", err.message);
@@ -100,21 +115,6 @@ db.serialize(() => {
   `);
 });
 
-function getResetVersion(callback) {
-  db.get(
-    "SELECT value FROM app_state WHERE key = 'reset_version'",
-    [],
-    (err, row) => {
-      if (err) {
-        callback(err, null);
-        return;
-      }
-
-      callback(null, row ? Number(row.value) : 0);
-    }
-  );
-}
-
 app.get("/", (req, res) => {
   getResetVersion((err, resetVersion) => {
     res.json({
@@ -141,6 +141,62 @@ app.get("/api/state", (req, res) => {
       lockHour: LOCK_HOUR,
     });
   });
+});
+
+app.get("/api/next-question/:playerId", (req, res) => {
+  const playerId = Number(req.params.playerId);
+  const todayKey = getTodayKey();
+  const todayQuestions = questions[todayKey] || [];
+
+  if (!playerId) {
+    return res.status(400).json({
+      error: "Joueur manquant",
+    });
+  }
+
+  db.all(
+    `
+    SELECT question_number
+    FROM answers
+    WHERE player_id = ?
+    AND day_key = ?
+    `,
+    [playerId, todayKey],
+    (err, rows) => {
+      if (err) {
+        return res.status(500).json({
+          error: "Erreur recherche prochaine question",
+        });
+      }
+
+      const answeredNumbers = rows.map((row) => row.question_number);
+
+      const nextQuestion = todayQuestions.find(
+        (question) => !answeredNumbers.includes(question.number)
+      );
+
+      if (!nextQuestion) {
+        return res.json({
+          finished: true,
+          day: todayKey,
+          locked: isGameLocked(),
+          lockHour: LOCK_HOUR,
+          totalQuestions: todayQuestions.length,
+          answeredCount: answeredNumbers.length,
+        });
+      }
+
+      res.json({
+        finished: false,
+        day: todayKey,
+        nextNumber: nextQuestion.number,
+        locked: isGameLocked(),
+        lockHour: LOCK_HOUR,
+        totalQuestions: todayQuestions.length,
+        answeredCount: answeredNumbers.length,
+      });
+    }
+  );
 });
 
 app.get("/api/question/:number", (req, res) => {
