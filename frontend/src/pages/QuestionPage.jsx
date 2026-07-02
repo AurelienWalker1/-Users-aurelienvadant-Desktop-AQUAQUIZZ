@@ -62,4 +62,3 @@ function QuestionPage({ player }) {
   }
 
   async function handleAnswer(choice) {
-    if (locked) {
