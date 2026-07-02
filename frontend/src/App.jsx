@@ -61,7 +61,10 @@ function App() {
         return;
       }
 
-      if (Number(localResetVersion) !== Number(data.resetVersion)) {
+      if (
+        Number(localResetVersion) !==
+        Number(data.resetVersion)
+      ) {
         localStorage.removeItem("aquaquizz_player");
         localStorage.removeItem("aquaquizz_intro_seen");
 
@@ -81,11 +84,18 @@ function App() {
   function handleRegister(newPlayer) {
     setPlayer(newPlayer);
     setIntroSeen(false);
-    localStorage.removeItem("aquaquizz_intro_seen");
+
+    localStorage.removeItem(
+      "aquaquizz_intro_seen"
+    );
   }
 
   function handleStartQuiz() {
-    localStorage.setItem("aquaquizz_intro_seen", "true");
+    localStorage.setItem(
+      "aquaquizz_intro_seen",
+      "true"
+    );
+
     setIntroSeen(true);
   }
 
@@ -93,32 +103,72 @@ function App() {
     <BrowserRouter>
       <div className="app">
         <Routes>
+
+          {/* Accueil */}
           <Route
             path="/"
-            element={<Navigate to="/question/1" />}
-          />
-
-          <Route
-            path="/question/:number"
             element={
               !player ? (
-                <RegisterPage onRegister={handleRegister} />
+                <RegisterPage
+                  onRegister={handleRegister}
+                />
               ) : !introSeen ? (
                 <IntroPage
                   player={player}
                   onStart={handleStartQuiz}
                 />
               ) : (
-                <ReadyPage />
+                <Navigate to="/question/next" />
               )
             }
           />
 
+          {/* Tous les QR mènent ici */}
+          <Route
+            path="/question/:number"
+            element={
+              !player ? (
+                <RegisterPage
+                  onRegister={handleRegister}
+                />
+              ) : !introSeen ? (
+                <IntroPage
+                  player={player}
+                  onStart={handleStartQuiz}
+                />
+              ) : (
+                <ReadyPage player={player} />
+              )
+            }
+          />
+
+          {/* Question suivante automatique */}
+          <Route
+            path="/question/next"
+            element={
+              !player ? (
+                <RegisterPage
+                  onRegister={handleRegister}
+                />
+              ) : !introSeen ? (
+                <IntroPage
+                  player={player}
+                  onStart={handleStartQuiz}
+                />
+              ) : (
+                <ReadyPage player={player} />
+              )
+            }
+          />
+
+          {/* Question réelle */}
           <Route
             path="/question/:number/play"
             element={
               !player ? (
-                <RegisterPage onRegister={handleRegister} />
+                <RegisterPage
+                  onRegister={handleRegister}
+                />
               ) : !introSeen ? (
                 <IntroPage
                   player={player}
@@ -130,11 +180,21 @@ function App() {
             }
           />
 
-          <Route path="/ranking" element={<RankingPage />} />
+          <Route
+            path="/ranking"
+            element={<RankingPage />}
+          />
 
-          <Route path="/admin" element={<AdminPage />} />
+          <Route
+            path="/admin"
+            element={<AdminPage />}
+          />
 
-          <Route path="/live" element={<LivePage />} />
+          <Route
+            path="/live"
+            element={<LivePage />}
+          />
+
         </Routes>
       </div>
     </BrowserRouter>
